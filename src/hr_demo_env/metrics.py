@@ -38,17 +38,21 @@ def attendance_anomalies(conn, start: str, end: str, limit: int = 50) -> list[di
     """Late arrivals (>09:30), missing punches, overtime rows in range."""
     _check_range(start, end)
     rows = conn.execute(
-        """SELECT emp_id, day, clock_in, clock_out, overtime_min FROM attendance
-           WHERE day BETWEEN ? AND ?
-             AND (clock_in > '09:30' OR clock_out IS NULL OR overtime_min > 0)
-           ORDER BY day LIMIT ?""", (start, end, limit)).fetchall()
+        """SELECT a.emp_id, a.day, a.clock_in, a.clock_out, a.overtime_min, d.name
+           FROM attendance a
+           JOIN employees e ON e.emp_id = a.emp_id
+           JOIN departments d ON d.dept_id = e.dept_id
+           WHERE a.day BETWEEN ? AND ?
+             AND (a.clock_in > '09:30' OR a.clock_out IS NULL OR a.overtime_min > 0)
+           ORDER BY a.day LIMIT ?""", (start, end, limit)).fetchall()
     out = []
-    for emp_id, day, ci, co, ot in rows:
+    for emp_id, day, ci, co, ot, dept in rows:
         if co is None:
             typ, detail = "missing_punch", f"clock_in={ci}, no clock_out"
         elif ot and ot > 0:
             typ, detail = "overtime", f"overtime_min={ot}"
         else:
             typ, detail = "late", f"clock_in={ci}"
-        out.append({"emp_id": emp_id, "day": day, "type": typ, "detail": detail})
+        out.append({"emp_id": emp_id, "day": day, "type": typ,
+                    "detail": detail, "dept": dept})
     return out

@@ -183,3 +183,113 @@ Target: Strategic HR executive view.
    - Run `list-workbooks` → `HR_Analytics_Demo` should appear.
    - Run `list-views` → the 2 dashboards will be enumerated.
    - Run `get-view-image` → Claude captures and verifies the rendered visuals!
+
+---
+
+## 7. Extract Refresh Runbook (improvement 2)
+
+**Key fact:** both dashboards read the stored extract `HR_Analytics_Extract`,
+not Snowflake directly. An extract is a snapshot — rows added to
+`TEST_SANDBOX.ASSIGNMENT_SABINA` are invisible in the dashboards until the
+extract refreshes. The AI agent is different: it queries Snowflake live, so
+intraday the agent can be fresher than the dashboards.
+
+### 7.1 Refresh now (after any data load)
+
+1. Tableau Cloud → Explore → find data source `HR_Analytics_Extract`.
+2. Open its menu (⋯) → **Refresh Now** (or open the workbook → Data → Refresh Extracts).
+3. Wait for the refresh to finish, then reload both dashboards and check the
+   data-source "Updated" timestamp matches the load time.
+
+### 7.2 Scheduled refresh (recommended: daily)
+
+1. Same ⋯ menu on `HR_Analytics_Extract` → **Refresh schedule** → New schedule.
+2. Cadence: daily, off-hours site time (e.g. 02:00). Extract is small (<100k rows).
+3. Credentials must stay embedded (set to Yes at publish, §6) or scheduled
+   refresh fails with an auth error — that is the first thing to check on failure.
+
+### 7.3 Reloading data end-to-end
+
+1. Regenerate/modify: `python3 -m hr_demo_env.generator --seed 42`
+   (rebuilds `data/*.csv` + `data/dev.db`).
+2. Load: `HR_BACKEND=snowflake python3 scripts/load_snowflake.py
+   --confirm TEST_SANDBOX.ASSIGNMENT_SABINA --allow-overwrite`.
+3. Refresh the extract (§7.1 or wait for §7.2), then sanity-check:
+   `get-view-data` totals vs `get_headcount` / Snowflake `COUNT(*)` agree.
+4. Schema changes (new columns/tables) are NOT picked up by refresh — edit the
+   data source in Web Authoring and republish.
+
+### 7.4 Agent-vs-dashboard lag
+
+If the agent and a dashboard disagree, compare timestamps first: the agent
+answers from live Snowflake (`as of today`), the dashboard from the last
+extract refresh. Match = extract refreshed after the load. If they still differ
+after a refresh, suspect a dashboard filter (e.g. TERM_DATE Null-only) before
+suspecting the data.
+
+### 7.5 Live-connection alternative (not recommended now)
+
+Switching the data source from Extract to Live makes dashboards always fresh,
+but every interaction runs Snowflake queries (warehouse cost per view, slower
+loads, needs persistent Cloud→Snowflake connectivity). Keep the extract +
+daily refresh: HR analytics does not need second-level freshness.
+
+---
+
+## 8. Alerts & Notifications (improvement 3)
+
+All Tableau-native — no code, no extra infra. Note alerts evaluate against the
+extract (§7), so set the refresh schedule first; an alert is only as fresh as
+the last refresh. Baselines below come from the verified dataset (288 active,
+12 exits, quarterly dept exit rates ≈ 0.03, Data lifetime overtime 89,614 min).
+
+### 8.1 Data-driven alerts (recommended — set these 3)
+
+1. Open the view → **Alert** (bell icon) → **Create** → condition → frequency
+   (daily after the extract refresh) → add recipients by email.
+2. Suggested starters (tune after a month of baseline):
+   - `Turnover_By_Department`: max dept exit rate **> 0.05** (observed max ≈ 0.031).
+   - `Trend_Monthly_Anomalies` / overtime: month overtime minutes **> 2×** trailing
+     3-month average.
+   - `Headcount by Dept`: active headcount **drops by more than 5** vs prior refresh.
+3. Recipients: the 3 reviewers already on the workbook share
+   (mayab@soliddata.io, tomers@getsolid.ai, evyatarm@soliddata.io).
+4. Ownership: alerts run as their creator — create them from a service/owner
+   account that will keep access, not a personal login that may lapse.
+
+### 8.2 Subscriptions (weekly digest)
+
+Workbook ⋯ menu → **Subscribe** → weekly schedule (e.g. Monday 08:00) → PNG/PDF
+snapshot of both dashboards to the same recipients. Cheap way to keep
+stakeholders looking at the numbers without opening Tableau.
+
+### 8.3 Pulse metrics (optional, richer)
+
+This site supports Pulse (MCP pulse tools are available). Define 2 metrics on
+`HR_Analytics_Extract`: **Active headcount** and **Quarterly turnover rate**,
+follow them, and enable threshold alerts + digest. Same thresholds as §8.1.
+Use Pulse when stakeholders want phone-friendly numbers; keep alerts in §8.1
+as the operational backstop.
+
+### 8.4 Snowflake alerts (optional, needs admin)
+
+`TEST_ROLE_SABINA` cannot create these — request from the account owner:
+
+```sql
+CREATE ALERT HR_EXIT_SPIKE
+  WAREHOUSE = TEST_WH SCHEDULE = 'USING CRON 0 6 * * * UTC'
+  IF (EXISTS (SELECT 1 FROM TEST_SANDBOX.ASSIGNMENT_SABINA.EMPLOYEES
+              WHERE TERM_DATE >= DATEADD(month, -1, CURRENT_DATE())
+              GROUP BY 1 HAVING COUNT(*) > 5))
+  THEN CALL SYSTEM$SEND_EMAIL(...);
+```
+
+Needs a notification integration + `EXECUTE ALERT` privilege. Prefer §8.1 unless
+the team already runs Snowflake alerting.
+
+### 8.5 Agent-side polling (future, not built)
+
+A cron job calling the existing MCP metrics (`turnover_by_dept`,
+`attendance_anomalies`) and comparing against §8.1 thresholds, then emailing.
+Nothing schedules it today and Tableau already covers the need — revisit only
+if alert logic outgrows what data-driven alerts express.

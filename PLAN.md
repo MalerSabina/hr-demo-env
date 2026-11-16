@@ -23,3 +23,12 @@
 - [x] EVIDENCE.md complete → AC: every decision has a reason; every verify step has command → result.
 
 Status: M1–M4 COMPLETE 2026-11-16 — Phase 1 Snowflake load 84,959 rows verified (tables_in_schema=6); Phase 2 both dashboards live & verified (Attendance c83822a6…, Retention e64fb413…); Phase 3 agent live-verified (grounded + refusal); 22/22 pytest green.
+
+## M5 — NL routing + runbooks (improvement 1–3, 2026-11-16)
+
+- [x] Date-aware routing (`last year/quarter`, YTD, QTD) + dept filtering/compare + per-dept anomaly ranking → AC: battery on real data correct, salary still refused.
+- [x] `tests/test_agent_nl.py` (8 tests) + `SYSTEM_PROMPT.md` synced → AC: **30/30 pytest green**.
+- [x] Freshness runbook (`TABLEAU_GUIDE.md` §7) + alerts plan (§8) → AC: refresh path, lag rule, 3 alert definitions documented.
+- [x] `DELIVERABLES_SUMMARY.html` share status + freshness note → AC: no stale claims.
+
+Status: M1–M5 COMPLETE 2026-11-16 — suite 30/30; open items are UI-side only (extract schedule, 3 alerts) + `git push` (needs user token).
