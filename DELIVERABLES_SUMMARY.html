@@ -1,0 +1,149 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>HR Demo Delivery Summary</title>
+<style>
+/* Layout: single-column doc, max 860px, cards for metrics */
+:root {
+  --bg: #faf9f7; --fg: #1c1a17; --muted: #6b655c; --accent: #2456a6;
+  --card: #ffffff; --line: #e4e0d8; --chip: #eef3fb;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161a; --fg: #e8e6e1; --muted: #a3a099; --accent: #7aa5e8;
+    --card: #1d2127; --line: #2e333b; --chip: #22304a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161a; --fg: #e8e6e1; --muted: #a3a099; --accent: #7aa5e8;
+  --card: #1d2127; --line: #2e333b; --chip: #22304a;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px;
+  font-family: Inter, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.6; margin: 0;
+}
+.wrap { max-width: 860px; margin: 0 auto; min-width: 0; }
+h1 { font-family: "Space Grotesk", Inter, sans-serif; font-size: 30px; margin: 0 0 4px; text-wrap: balance; }
+h2 { font-family: "Space Grotesk", Inter, sans-serif; font-size: 21px; margin: 36px 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+h3 { font-size: 16px; margin: 20px 0 6px; }
+p, li { font-size: 15px; max-width: 65ch; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin: 12px 0; }
+.card h3 { margin-top: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 12px 0; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+.stat .n { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+a { color: var(--accent); }
+code { background: var(--chip); padding: 1px 6px; border-radius: 6px; font-size: 13.5px; }
+pre.mermaid { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; font-size: 13px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.emailrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+.emailrow code { font-size: 14px; }
+button.copy { border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 6px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+ol.steps li, ul li { margin-bottom: 6px; }
+.note { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--card); border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 14px; }
+</style>
+<div class="wrap">
+<h1>HR Demo — Delivery Summary</h1>
+<p class="sub">Snowflake DWH · Tableau BI · AI chat agent — fictitious data only (seed 42), verified live 2026-11-16.</p>
+
+<h2>1. Data Structure</h2>
+<p>Snowflake target: <code>TEST_SANDBOX.ASSIGNMENT_SABINA</code> on warehouse <code>TEST_WH</code> (role <code>TEST_ROLE_SABINA</code>). Six normalized tables, 84,959 rows total, spanning 2024-11-15 → 2026-11-13. Local mirror <code>data/dev.db</code> (SQLite) holds identical counts for credential-free runs.</p>
+<div class="grid">
+<div class="stat"><div class="n">8</div><div class="l">Departments</div></div>
+<div class="stat"><div class="n">24</div><div class="l">Roles (3 / dept)</div></div>
+<div class="stat"><div class="n">300</div><div class="l">Employees (288 active)</div></div>
+<div class="stat"><div class="n">83,272</div><div class="l">Attendance rows</div></div>
+<div class="stat"><div class="n">895</div><div class="l">Leaves</div></div>
+<div class="stat"><div class="n">460</div><div class="l">Lifecycle events</div></div>
+</div>
+<pre class="mermaid">erDiagram
+  DEPARTMENTS ||--o{ ROLES : "dept_id"
+  DEPARTMENTS ||--o{ EMPLOYEES : "dept_id"
+  ROLES ||--o{ EMPLOYEES : "role_id"
+  EMPLOYEES ||--o{ EMPLOYEES : "manager_id (self)"
+  EMPLOYEES ||--o{ ATTENDANCE : "emp_id"
+  EMPLOYEES ||--o{ LEAVES : "emp_id"
+  EMPLOYEES ||--o{ LIFECYCLE_EVENTS : "emp_id"
+</pre>
+<div class="tablewrap"><table>
+<tr><th>Table</th><th>Key columns</th><th>Relationships</th></tr>
+<tr><td><code>DEPARTMENTS</code></td><td>dept_id PK · name UNIQUE · budget</td><td>parent of ROLES, EMPLOYEES</td></tr>
+<tr><td><code>ROLES</code></td><td>role_id PK · dept_id FK · title · level · base_salary</td><td>→ DEPARTMENTS; parent of EMPLOYEES</td></tr>
+<tr><td><code>EMPLOYEES</code></td><td>emp_id PK · email UNIQUE · dept_id · role_id · manager_id (self-FK) · hire_date · term_date NULL=active · salary</td><td>→ DEPARTMENTS, ROLES, EMPLOYEES</td></tr>
+<tr><td><code>ATTENDANCE</code></td><td>att_id PK · emp_id · day DATE · clock_in/out TIME · overtime_min</td><td>→ EMPLOYEES</td></tr>
+<tr><td><code>LEAVES</code></td><td>leave_id PK · emp_id · start/end_day · kind (vacation|sick|unpaid)</td><td>→ EMPLOYEES</td></tr>
+<tr><td><code>LIFECYCLE_EVENTS</code></td><td>ev_id PK · emp_id · ev_day · kind (promotion|raise|transfer) · details VARIANT</td><td>→ EMPLOYEES</td></tr>
+</table></div>
+<p>Integrity verified live: 0 employees with bad department, 0 orphan attendance rows, 0 terminations before hire. Kinds: vacation 463 / sick 237 / unpaid 195; promotion 136 / raise 165 / transfer 159.</p>
+
+<h2>2. Dashboards Overview</h2>
+<div class="card">
+<h3>Data layer (Tableau)</h3>
+<p>Tableau Cloud site <code>malersabina25-37fd130b43</code>, project <code>default</code>, workbook <code>HR_Analytics_Demo</code>. Source: Snowflake tables above via stored extract (<code>HR_Analytics_Extract</code>), the single source of truth shared by both dashboards and the AI agent. Key calcs: <code>Is_Late = (hour×60+minute) &gt; 570</code> (09:30), <code>Is_Active = ISNULL(term_date)</code>, overtime <code>SUM(overtime_min)</code>.</p>
+</div>
+<div class="card">
+<h3>Dashboard 1 — Attendance Anomaly Dashboard</h3>
+<p>Operational view of time-tracking health (~83k punches). <strong>Late Clock-In</strong> — late arrivals by dept (Data 1,188 highest; 8,145 total, matches Snowflake). <strong>Overtime by Dept</strong> — Data 89,614 min highest, Support 60,436 lowest. <strong>Monthly Attendance Trend</strong> — punch volume, Oct peak 9,752, Dec trough 4,402.</p>
+<p><a href="https://prod-ch-a.online.tableau.com/#/site/malersabina25-37fd130b43/views/HR_Analytics_Demo/AttendanceAnomalyDashboard">Open Attendance Anomaly Dashboard</a> · view ID <code>c83822a6-…</code></p>
+</div>
+<div class="card">
+<h3>Dashboard 2 — Retention &amp; Turnover Risk Dashboard</h3>
+<p>Strategic attrition view (300 staff). <strong>Headcount by Dept</strong> — 288 active (Data 44 down to Support 30). <strong>Exits by Dept</strong> — 12 exits (Operations 3 highest). <strong>Hires Over Time</strong> — cohort velocity, Dec-2024 peak 21 hires.</p>
+<p><a href="https://prod-ch-a.online.tableau.com/#/site/malersabina25-37fd130b43/views/HR_Analytics_Demo/RetentionDashboard">Open Retention &amp; Turnover Risk Dashboard</a> · view ID <code>e64fb413-…</code></p>
+<p>Workbook (both tabs): <a href="https://prod-ch-a.online.tableau.com/#/site/malersabina25-37fd130b43/workbooks/1697373">HR_Analytics_Demo</a></p>
+</div>
+<div class="note">Dashboard links need a Tableau Cloud account on this site. If a link asks you to sign in, open the workbook link first, then the dashboard tab.</div>
+
+<h2>3. AI Agent Guide</h2>
+<p>The agent answers only from live metric tools (<code>get_headcount</code>, <code>turnover_by_dept</code>, <code>attendance_anomalies</code>) and cites its dashboard source. Salary / personal-data questions are refused. Try:</p>
+<div class="card">
+<h3>Sample questions</h3>
+<ol class="steps">
+<li><strong>Headcount:</strong> “What is our current headcount?” — answers 288 active, cites headcount metric.</li>
+<li><strong>Turnover:</strong> “What was turnover by department last quarter?” — per-dept started / exits / rate (Support highest ≈0.031), cites Retention dashboard.</li>
+<li><strong>Overtime:</strong> “Which department had the most overtime last year?” — Data highest (89,614 min), cites Attendance dashboard.</li>
+<li><strong>Punctuality:</strong> “Show me late arrivals by department this quarter.” — ~8,145 late rows broken down by dept.</li>
+<li><strong>Guardrail test:</strong> “What is John Doe’s salary?” — must refuse (out of scope, no sources).</li>
+</ol>
+<p>Run locally: <code>HR_BACKEND=snowflake PYTHONPATH=src python3 -m hr_demo_env.agent "turnover by department last quarter?"</code></p>
+</div>
+
+<h2>4. Dashboard invitations</h2>
+<p>Tableau Cloud has no API for sharing, so invites go out from the Share dialog (takes ~1 minute):</p>
+<ol class="steps">
+<li>Open the <a href="https://prod-ch-a.online.tableau.com/#/site/malersabina25-37fd130b43/workbooks/1697373">HR_Analytics_Demo workbook</a> → <strong>Share</strong> (top-right).</li>
+<li>Add each address below as Viewer, with both dashboards checked, and send.</li>
+</ol>
+<div class="emailrow"><code id="e1">mayab@soliddata.io</code><button class="copy" data-t="e1">Copy</button></div>
+<div class="emailrow"><code id="e2">tomers@getsolid.ai</code><button class="copy" data-t="e2">Copy</button></div>
+<div class="emailrow"><code id="e3">evyatarm@soliddata.io</code><button class="copy" data-t="e3">Copy</button></div>
+<p class="sub">Status: invites not yet sent from this session — pending owner click-through above.</p>
+</div>
+<script>
+document.querySelectorAll('button.copy').forEach(function(b){
+  b.addEventListener('click', function(){
+    var el = document.getElementById(b.getAttribute('data-t'));
+    var t = el ? el.textContent : '';
+    function done(){ b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy'; }, 1500); }
+    try {
+      navigator.clipboard.writeText(t).then(done, function(){
+        var r = document.createRange(); r.selectNodeContents(el);
+        var s = getSelection(); s.removeAllRanges(); s.addRange(r); done();
+      });
+    } catch (e) {
+      var r = document.createRange(); r.selectNodeContents(el);
+      var s = getSelection(); s.removeAllRanges(); s.addRange(r); done();
+    }
+  });
+});
+</script>

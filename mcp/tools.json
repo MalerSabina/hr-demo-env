@@ -1,0 +1,61 @@
+{
+  "tools": [
+    {
+      "name": "get_headcount",
+      "description": "Active employee headcount as of a date.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "as_of": { "type": "string", "description": "YYYY-MM-DD" },
+          "warehouse": { "type": "string", "description": "Optional: one of SNOWFLAKE_WAREHOUSES" },
+          "database": { "type": "string", "description": "Optional: override default database" }
+        },
+        "required": ["as_of"]
+      },
+      "output": { "type": "integer" }
+    },
+    {
+      "name": "turnover_by_dept",
+      "description": "Per-department starts, exits, and exit rates over a date range.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "start": { "type": "string" },
+          "end": { "type": "string" },
+          "warehouse": { "type": "string", "description": "Optional: one of SNOWFLAKE_WAREHOUSES" },
+          "database": { "type": "string", "description": "Optional: override default database" }
+        },
+        "required": ["start", "end"]
+      },
+      "output": { "type": "array" }
+    },
+    {
+      "name": "attendance_anomalies",
+      "description": "Late arrivals, missing punches, and overtime rows in a date range.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "start": { "type": "string" },
+          "end": { "type": "string" },
+          "limit": { "type": "integer", "default": 50 },
+          "warehouse": { "type": "string", "description": "Optional: one of SNOWFLAKE_WAREHOUSES" },
+          "database": { "type": "string", "description": "Optional: override default database" }
+        },
+        "required": ["start", "end"]
+      },
+      "output": { "type": "array" }
+    },
+    {
+      "name": "list_databases",
+      "description": "All databases visible to the connection.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "warehouse": { "type": "string", "description": "Optional: one of SNOWFLAKE_WAREHOUSES" }
+        },
+        "required": []
+      },
+      "output": { "type": "array" }
+    }
+  ]
+}

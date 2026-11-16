@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "tableau": {
+      "command": "npx",
+      "args": ["-y", "@tableau/mcp-server@latest"],
+      "env": {
+        "SERVER": "${TABLEAU_SERVER}",
+        "SITE_NAME": "${TABLEAU_SITE}",
+        "PAT_NAME": "${TABLEAU_PAT_NAME}",
+        "PAT_VALUE": "${TABLEAU_PAT_SECRET}"
+      },
+      "description": "Tableau Cloud dashboard metadata (workbooks, views, datasources). Values from local .env, never committed."
+    },
+    "hr-demo-env": {
+      "command": ".venv/bin/python",
+      "args": ["-B", "mcp/server.py"],
+      "cwd": ".",
+      "description": "HR-metrics tools (get_headcount, turnover_by_dept, attendance_anomalies). DB via HR_DB env."
+    }
+  }
+}

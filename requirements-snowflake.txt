@@ -1,0 +1,3 @@
+# Only for HR_BACKEND=snowflake. Local/dev stays on requirements.txt (stdlib).
+snowflake-connector-python>=3.0
+cryptography>=42

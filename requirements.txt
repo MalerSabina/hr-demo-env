@@ -1,0 +1,3 @@
+# stdlib only — metrics, generator, agent, and MCP server need no third-party packages.
+# Snowflake backend: see requirements-snowflake.txt. Tableau MCP server: Node.js 18+ with npx
+# (npx -y @tableau/mcp-server@latest per .mcp.json; TABLEAU_* creds via .env only).
